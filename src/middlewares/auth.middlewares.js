@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
-import { asyncHandler } from "../utils/async-handler.js";
-import { ErrorCodes } from "../utils/constants.js";
-import { ApiError } from "../utils/api-error.js";
-import { db } from "../libs/db.js";
+import jwt from 'jsonwebtoken';
+import { asyncHandler } from '../utils/async-handler.js';
+import { ErrorCodes } from '../utils/constants.js';
+import { ApiError } from '../utils/api-error.js';
+import { db } from '../libs/db.js';
 
 export const isLoggedIn = asyncHandler(async (req, res, next) => {
     console.log(req.cookies);
@@ -11,9 +11,9 @@ export const isLoggedIn = asyncHandler(async (req, res, next) => {
     console.log(accessToken);
 
     if (!accessToken) {
-        throw new ApiError(401, "Unauthorized request", {
-            code: ErrorCodes.USER_NOT_LOGGED_IN
-        })
+        throw new ApiError(401, 'Unauthorized request', {
+            code: ErrorCodes.USER_NOT_LOGGED_IN,
+        });
     }
 
     let decodedToken;
@@ -21,14 +21,14 @@ export const isLoggedIn = asyncHandler(async (req, res, next) => {
     try {
         decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
     } catch (error) {
-        throw new ApiError(401, "Invalid or expired access token", {
-            code: ErrorCodes.INVALID_ACCESS_TOKEN
+        throw new ApiError(401, 'Invalid or expired access token', {
+            code: ErrorCodes.INVALID_ACCESS_TOKEN,
         });
     }
 
-    if (!decodedToken?.id || typeof decodedToken.id !== "string") {
-        throw new ApiError(401, "Malformed token payload", {
-            code: ErrorCodes.INVALID_ACCESS_TOKEN
+    if (!decodedToken?.id || typeof decodedToken.id !== 'string') {
+        throw new ApiError(401, 'Malformed token payload', {
+            code: ErrorCodes.INVALID_ACCESS_TOKEN,
         });
     }
 
@@ -41,9 +41,9 @@ export const isLoggedIn = asyncHandler(async (req, res, next) => {
     }
 
     if (!user) {
-        throw new ApiError(401, "User not found", {
-            code: ErrorCodes.USER_NOT_REGISTERED
-        })
+        throw new ApiError(401, 'User not found', {
+            code: ErrorCodes.USER_NOT_REGISTERED,
+        });
     }
 
     req.user = user;
@@ -57,13 +57,13 @@ export const isAdmin = asyncHandler(async (req, res, next) => {
     const user = await db.user.findUnique({
         where: { id: userId },
         select: {
-            role: true
-        }
+            role: true,
+        },
     });
 
-    if (!user || user.role !== "ADMIN") {
-        throw new ApiError(403, "Admin access only", {
-            code: ErrorCodes.UNAUTHORIZED_ACCESS
+    if (!user || user.role !== 'ADMIN') {
+        throw new ApiError(403, 'Admin access only', {
+            code: ErrorCodes.UNAUTHORIZED_ACCESS,
         });
     }
     next();
@@ -86,9 +86,13 @@ export const verifyOAuthTempToken = asyncHandler(async (req, res, next) => {
     }
 
     if (!token) {
-        throw new ApiError(401, 'Temporary token missing for profile completion', {
-            code: ErrorCodes.TOKEN_MISSING
-        });
+        throw new ApiError(
+            401,
+            'Temporary token missing for profile completion',
+            {
+                code: ErrorCodes.TOKEN_MISSING,
+            }
+        );
     }
 
     try {
@@ -97,7 +101,7 @@ export const verifyOAuthTempToken = asyncHandler(async (req, res, next) => {
         next();
     } catch (error) {
         throw new ApiError(401, 'Invalid or expired temporary token', {
-            code: ErrorCodes.TOKEN_INVALID
+            code: ErrorCodes.TOKEN_INVALID,
         });
     }
 });

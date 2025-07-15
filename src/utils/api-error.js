@@ -25,7 +25,6 @@ class ApiError extends Error {
 
 export { ApiError };
 
-
 // class ApiError extends Error {
 //     /**
 //      * @param {number} statusCode - The HTTP status code.
@@ -54,5 +53,3 @@ export { ApiError };
 // }
 
 // export { ApiError }
-
-

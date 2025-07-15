@@ -1,5 +1,5 @@
-import Mailgen from "mailgen";
-import nodemailer from "nodemailer";
+import Mailgen from 'mailgen';
+import nodemailer from 'nodemailer';
 
 export const sendMail = async (options) => {
     var mailGenerator = new Mailgen({
@@ -7,10 +7,10 @@ export const sendMail = async (options) => {
         product: {
             // Appears in header & footer of e-mails
             name: 'Task Manager',
-            link: 'https://mailgen.js/'
+            link: 'https://mailgen.js/',
             // Optional product logo
             // logo: 'https://mailgen.js/img/logo.png'
-        }
+        },
     });
 
     var emailHTML = mailGenerator.generate(options.mailGenContent);
@@ -32,32 +32,32 @@ export const sendMail = async (options) => {
         subject: options.subject, // Subject line
         text: emailText, // plain text body
         html: emailHTML, // html body
-    }
+    };
 
     try {
-        await transporter.sendMail(mail)
+        await transporter.sendMail(mail);
     } catch (error) {
-        console.error("Error occurred while sending mail:", error);
+        console.error('Error occurred while sending mail:', error);
     }
-}
+};
 
 export const emailVerificationMailGenContent = (username, verificationUrl) => {
     return {
         body: {
             name: username,
-            intro: 'Welcome to App! We\'re very excited to have you on board.',
+            intro: "Welcome to App! We're very excited to have you on board.",
             action: {
                 instructions: 'To get started with Our App, please click here:',
                 button: {
                     color: '#22BC66',
                     text: 'Verify your email',
                     link: verificationUrl,
-                }
+                },
             },
-            outro: 'Need help, or have questions? Just reply to this email, we\'d love to help.'
-        }
-    }
-}
+            outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
+        },
+    };
+};
 
 export const resetPasswordMailGenContent = (username, passwordResetUrl) => {
     return {
@@ -70,13 +70,12 @@ export const resetPasswordMailGenContent = (username, passwordResetUrl) => {
                     color: '#DC4D2F',
                     text: 'Reset your password',
                     link: passwordResetUrl,
-                }
+                },
             },
-            outro: 'If you did not request a password reset, no further action is required.'
-        }
-    }
-}
-
+            outro: 'If you did not request a password reset, no further action is required.',
+        },
+    };
+};
 
 /* EXAMPLE */
 // sendMail({

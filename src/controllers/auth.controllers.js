@@ -1,40 +1,52 @@
-import crypto from "crypto";
-import jwt from "jsonwebtoken";
-import axios from "axios";
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
-import { asyncHandler } from "../utils/async-handler.js";
-import { sendMail, emailVerificationMailGenContent, resetPasswordMailGenContent } from "../utils/mail.js"
-import { ApiError } from "../utils/api-error.js";
-import { ErrorCodes } from "../utils/constants.js";
-import { ApiResponse } from "../utils/api-response.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { db } from "../libs/db.js";
-import { Role } from "../generated/prisma/index.js";
-import { comparePassword, generateAccessToken, generateNonce, generateRefreshToken, generateState, generateTemporaryToken, sanitize, verifyGoogleToken } from "../utils/auth.utils.js";
+import { asyncHandler } from '../utils/async-handler.js';
+import {
+    sendMail,
+    emailVerificationMailGenContent,
+    resetPasswordMailGenContent,
+} from '../utils/mail.js';
+import { ApiError } from '../utils/api-error.js';
+import { ErrorCodes } from '../utils/constants.js';
+import { ApiResponse } from '../utils/api-response.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { db } from '../libs/db.js';
+import { Role } from '../generated/prisma/index.js';
+import {
+    comparePassword,
+    generateAccessToken,
+    generateNonce,
+    generateRefreshToken,
+    generateState,
+    generateTemporaryToken,
+    sanitize,
+    verifyGoogleToken,
+} from '../utils/auth.utils.js';
 
 const registerUser = asyncHandler(async (req, res) => {
     const { fullname, email, username, password } = req.body;
 
     if (
-        [fullname, email, username, password].some((field) => field?.trim() === "")
+        [fullname, email, username, password].some(
+            (field) => field?.trim() === ''
+        )
     ) {
-        throw new ApiError(400, "All fields are required", {
-            code: ErrorCodes.MISSING_FIELDS
-        })
+        throw new ApiError(400, 'All fields are required', {
+            code: ErrorCodes.MISSING_FIELDS,
+        });
     }
 
     const existingUser = await db.user.findFirst({
         where: {
-            OR: [
-                { email },
-                { username },
-            ]
-        }
+            OR: [{ email }, { username }],
+        },
     });
 
     if (existingUser) {
-        throw new ApiError(400, "User with email or username already exists", {
-            code: ErrorCodes.USER_ALREADY_EXISTS
+        throw new ApiError(400, 'User with email or username already exists', {
+            code: ErrorCodes.USER_ALREADY_EXISTS,
         });
     }
 
@@ -43,9 +55,9 @@ const registerUser = asyncHandler(async (req, res) => {
     console.log(avatarLocalPath);
 
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar file is required", {
-            code: ErrorCodes.AVATAR_NOT_PROVIDED
-        })
+        throw new ApiError(400, 'Avatar file is required', {
+            code: ErrorCodes.AVATAR_NOT_PROVIDED,
+        });
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -57,13 +69,13 @@ const registerUser = asyncHandler(async (req, res) => {
             email,
             username,
             password,
-            role: Role.USER
-        }
+            role: Role.USER,
+        },
     });
     console.log(user);
 
     if (!user) {
-        throw new ApiError(404, "User not registered", {
+        throw new ApiError(404, 'User not registered', {
             code: ErrorCodes.USER_NOT_REGISTERED,
         });
     }
@@ -75,19 +87,25 @@ const registerUser = asyncHandler(async (req, res) => {
         data: {
             emailVerificationToken: hashedToken,
             emailVerificationTokenExpiry: tokenExpiry,
-        }
+        },
     });
 
-    const verificationUrl = `${process.env.BASE_URL}api/v1/users/verifyEmail/${unHashedToken}`
-
+    const verificationUrl = `${process.env.BASE_URL}api/v1/users/verifyEmail/${unHashedToken}`;
 
     await sendMail({
         email: user.email,
-        subject: "Verify your email",
-        mailGenContent: emailVerificationMailGenContent(user.username, verificationUrl),
+        subject: 'Verify your email',
+        mailGenContent: emailVerificationMailGenContent(
+            user.username,
+            verificationUrl
+        ),
     });
 
-    const response = new ApiResponse(200, sanitize(user), "User registered successfully. Please verify your email now.");
+    const response = new ApiResponse(
+        200,
+        sanitize(user),
+        'User registered successfully. Please verify your email now.'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -96,37 +114,42 @@ const verifyEmail = asyncHandler(async (req, res) => {
     const { token } = req.params;
 
     if (!token) {
-        throw new ApiError(400, "Token is missing", {
+        throw new ApiError(400, 'Token is missing', {
             code: ErrorCodes.TOKEN_MISSING,
-        })
+        });
     }
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await db.user.findFirst({
         where: {
             emailVerificationToken: hashedToken,
-            emailVerificationTokenExpiry: { gt: new Date() }
-        }
+            emailVerificationTokenExpiry: { gt: new Date() },
+        },
     });
 
     if (!user) {
-        throw new ApiError(400, "Invalid Token", {
-            code: ErrorCodes.TOKEN_INVALID
-        })
+        throw new ApiError(400, 'Invalid Token', {
+            code: ErrorCodes.TOKEN_INVALID,
+        });
     }
 
-
     if (user.emailVerificationTokenExpiry < Date()) {
-        throw new ApiError(400, "Token has expired", {
-            code: ErrorCodes.TOKEN_EXPIRED
+        throw new ApiError(400, 'Token has expired', {
+            code: ErrorCodes.TOKEN_EXPIRED,
         });
     }
 
     if (user.isVerified) {
-        return res.status(200).json(
-            new ApiResponse(200, user.toPublicUserJSON(), "Your email is already verified.")
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    user.toPublicUserJSON(),
+                    'Your email is already verified.'
+                )
+            );
     }
 
     await db.user.update({
@@ -135,7 +158,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
             isEmailVerified: true,
             emailVerificationToken: null,
             emailVerificationTokenExpiry: null,
-        }
+        },
     });
 
     const updatedUser = await db.user.findUnique({
@@ -145,13 +168,17 @@ const verifyEmail = asyncHandler(async (req, res) => {
             email: true,
             username: true,
             isEmailVerified: true,
-            role: true
-        }
+            role: true,
+        },
     });
 
-    console.log("User is verified");
+    console.log('User is verified');
 
-    const response = new ApiResponse(201, sanitize(updatedUser), "User account is verified");
+    const response = new ApiResponse(
+        201,
+        sanitize(updatedUser),
+        'User account is verified'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -161,20 +188,30 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
 
     const user = await db.user.findUnique({
         where: {
-            email
-        }
+            email,
+        },
     });
 
     if (!user) {
-        throw new ApiError(400, "Account not found. Please verify your email or sign in again", {
-            code: ErrorCodes.USER_NOT_FOUND
-        })
+        throw new ApiError(
+            400,
+            'Account not found. Please verify your email or sign in again',
+            {
+                code: ErrorCodes.USER_NOT_FOUND,
+            }
+        );
     }
 
     if (user.isEmailVerified) {
-        return res.status(200).json(new ApiResponse(200, {
-            isEmailVerified: user.isEmailVerified
-        }, "Your email is already verified. Please log in"));
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    isEmailVerified: user.isEmailVerified,
+                },
+                'Your email is already verified. Please log in'
+            )
+        );
     }
 
     const [unHashedToken, hashedToken, tokenExpiry] = generateTemporaryToken();
@@ -184,19 +221,25 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
         data: {
             emailVerificationToken: hashedToken,
             emailVerificationTokenExpiry: tokenExpiry,
-        }
+        },
     });
 
-    const verificationUrl = `${process.env.BASE_URL}api/v1/users/verifyEmail/${unHashedToken}`
-
+    const verificationUrl = `${process.env.BASE_URL}api/v1/users/verifyEmail/${unHashedToken}`;
 
     await sendMail({
         email: user.email,
-        subject: "Verify your email",
-        mailGenContent: emailVerificationMailGenContent(user.username, verificationUrl),
+        subject: 'Verify your email',
+        mailGenContent: emailVerificationMailGenContent(
+            user.username,
+            verificationUrl
+        ),
     });
 
-    const response = new ApiResponse(200, sanitize(user), "Verification email sent successfully, check your registered email inbox");
+    const response = new ApiResponse(
+        200,
+        sanitize(user),
+        'Verification email sent successfully, check your registered email inbox'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -205,27 +248,27 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        throw new ApiError(400, "All fields are required", {
-            code: ErrorCodes.MISSING_FIELDS
-        })
+        throw new ApiError(400, 'All fields are required', {
+            code: ErrorCodes.MISSING_FIELDS,
+        });
     }
 
     const user = await db.user.findFirst({
         where: {
-            email
-        }
+            email,
+        },
     });
 
     if (!user) {
-        throw new ApiError(400, "Invalid email or password", {
-            code: ErrorCodes.INVALID_CREDENTIALS
-        })
+        throw new ApiError(400, 'Invalid email or password', {
+            code: ErrorCodes.INVALID_CREDENTIALS,
+        });
     }
 
     if (!user.isEmailVerified) {
-        throw new ApiError(400, "User not verified", {
-            code: ErrorCodes.USER_NOT_VERIFIED
-        })
+        throw new ApiError(400, 'User not verified', {
+            code: ErrorCodes.USER_NOT_VERIFIED,
+        });
     }
 
     const isMatch = await comparePassword(password, user);
@@ -233,35 +276,35 @@ const loginUser = asyncHandler(async (req, res) => {
     console.log(isMatch);
 
     if (!isMatch) {
-        throw new ApiError(400, "Invalid password", {
-            code: ErrorCodes.PASSWORDS_DO_NOT_MATCH
-        })
+        throw new ApiError(400, 'Invalid password', {
+            code: ErrorCodes.PASSWORDS_DO_NOT_MATCH,
+        });
     }
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    console.log("Refresh Token:", refreshToken);
+    console.log('Refresh Token:', refreshToken);
 
     await db.user.update({
         where: { id: user.id },
         data: {
-            refreshToken
-        }
+            refreshToken,
+        },
     });
 
-    res.cookie("accessToken", accessToken, {
+    res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: true,
         maxAge: 3600000,
     });
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: true,
         maxAge: 86400000,
     });
 
-    const response = new ApiResponse(201, sanitize(user), "Login successful");
+    const response = new ApiResponse(201, sanitize(user), 'Login successful');
 
     return res.status(response.statusCode).json(response);
 });
@@ -269,9 +312,9 @@ const loginUser = asyncHandler(async (req, res) => {
 const getUser = asyncHandler(async (req, res) => {
     const targetUserId = req.params.userId || req.user.id;
 
-    if (req.params.userId && req.user.role !== "admin") {
+    if (req.params.userId && req.user.role !== 'admin') {
         throw new ApiError(403, "Forbidden: You cannot view this user's data", {
-            code: ErrorCodes.UNAUTHORIZED_ACCESS
+            code: ErrorCodes.UNAUTHORIZED_ACCESS,
         });
     }
 
@@ -282,17 +325,17 @@ const getUser = asyncHandler(async (req, res) => {
             email: true,
             username: true,
             isEmailVerified: true,
-            role: true
-        }
+            role: true,
+        },
     });
 
     if (!user) {
-        throw new ApiError(400, "User not found", {
-            code: ErrorCodes.USER_NOT_FOUND
+        throw new ApiError(400, 'User not found', {
+            code: ErrorCodes.USER_NOT_FOUND,
         });
     }
 
-    const response = new ApiResponse(200, sanitize(user), "Current User Shown");
+    const response = new ApiResponse(200, sanitize(user), 'Current User Shown');
 
     return res.status(response.statusCode).json(response);
 });
@@ -300,41 +343,41 @@ const getUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) {
-        throw new ApiError(401, "Not logged in", {
-            code: ErrorCodes.LOGOUT_FAILED
-        })
+        throw new ApiError(401, 'Not logged in', {
+            code: ErrorCodes.LOGOUT_FAILED,
+        });
     }
 
     const refreshDecoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
 
     const user = await db.user.findUnique({
         where: {
-            id: refreshDecoded.id
-        }
+            id: refreshDecoded.id,
+        },
     });
 
     if (!user) {
-        throw new ApiError(401, "Unauthorized Access", {
-            code: ErrorCodes.UNAUTHORIZED_ACCESS
-        })
+        throw new ApiError(401, 'Unauthorized Access', {
+            code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        });
     }
 
     await db.user.update({
         where: { id: user.id },
         data: {
-            refreshToken: null
-        }
+            refreshToken: null,
+        },
     });
 
-    res.cookie("accessToken", "", {
+    res.cookie('accessToken', '', {
         httpOnly: true,
     });
 
-    res.cookie("refreshToken", "", {
+    res.cookie('refreshToken', '', {
         httpOnly: true,
     });
 
-    const response = new ApiResponse(201, undefined, "Logged out successfully");
+    const response = new ApiResponse(201, undefined, 'Logged out successfully');
 
     return res.status(response.statusCode).json(response);
 });
@@ -345,28 +388,28 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     console.log(refreshToken);
 
     if (!refreshToken) {
-        throw new ApiError(401, "No refresh token", {
-            code: ErrorCodes.REFRESH_TOKEN_MISSING
-        })
+        throw new ApiError(401, 'No refresh token', {
+            code: ErrorCodes.REFRESH_TOKEN_MISSING,
+        });
     }
 
     let decoded;
     try {
         decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     } catch (error) {
-        throw new ApiError(403, "Invalid or expired refresh token", {
+        throw new ApiError(403, 'Invalid or expired refresh token', {
             code: ErrorCodes.REFRESH_TOKEN_INVALID,
         });
     }
 
     const user = await db.user.findUnique({
         where: {
-            id: decoded?.id
-        }
+            id: decoded?.id,
+        },
     });
 
     if (!user) {
-        throw new ApiError(404, "User not found", {
+        throw new ApiError(404, 'User not found', {
             code: ErrorCodes.USER_NOT_FOUND,
         });
     }
@@ -374,9 +417,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     console.log(user.refreshToken);
 
     if (refreshToken !== user?.refreshToken) {
-        throw new ApiError(401, "Refresh token is expired or used", {
-            code: ErrorCodes.REFRESH_TOKEN_EXPIRED
-        })
+        throw new ApiError(401, 'Refresh token is expired or used', {
+            code: ErrorCodes.REFRESH_TOKEN_EXPIRED,
+        });
     }
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
@@ -384,20 +427,24 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     await db.user.update({
         where: { id: user.id },
         data: {
-            refreshToken: newRefreshToken
-        }
+            refreshToken: newRefreshToken,
+        },
     });
 
     const options = {
         httpOnly: true,
         secure: true,
-        sameSite: "none"
-    }
+        sameSite: 'none',
+    };
 
-    res.cookie("accessToken", newAccessToken, options);
-    res.cookie("refreshToken", newRefreshToken, options);
+    res.cookie('accessToken', newAccessToken, options);
+    res.cookie('refreshToken', newRefreshToken, options);
 
-    const response = new ApiResponse(201, { newAccessToken, newRefreshToken }, "Tokens refreshed");
+    const response = new ApiResponse(
+        201,
+        { newAccessToken, newRefreshToken },
+        'Tokens refreshed'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -407,16 +454,15 @@ const resetPasswordRequest = asyncHandler(async (req, res) => {
 
     const user = await db.user.findUnique({
         where: {
-            email
-        }
+            email,
+        },
     });
 
     console.log(user);
 
-
     if (!user) {
-        throw new ApiError(401, "Invalid Email. No user found", {
-            code: ErrorCodes.USER_NOT_FOUND
+        throw new ApiError(401, 'Invalid Email. No user found', {
+            code: ErrorCodes.USER_NOT_FOUND,
         });
     }
 
@@ -427,18 +473,25 @@ const resetPasswordRequest = asyncHandler(async (req, res) => {
         data: {
             forgotPasswordToken: hashedToken,
             forgotPasswordTokenExpiry: tokenExpiry,
-        }
+        },
     });
 
     const passwordResetUrl = `${process.env.BASE_URL}api/v1/auth/resetPassword/${unHashedToken}`;
 
     await sendMail({
         email: user.email,
-        subject: "Password Reset Link",
-        mailGenContent: resetPasswordMailGenContent(user.username, passwordResetUrl),
+        subject: 'Password Reset Link',
+        mailGenContent: resetPasswordMailGenContent(
+            user.username,
+            passwordResetUrl
+        ),
     });
 
-    const response = new ApiResponse(200, null, "Reset password email sent. Please check your inbox.");
+    const response = new ApiResponse(
+        200,
+        null,
+        'Reset password email sent. Please check your inbox.'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -449,39 +502,39 @@ const resetPassword = asyncHandler(async (req, res) => {
     const { password, confPassword } = req.body;
 
     if (password !== confPassword) {
-        console.log("No match");
-        throw new ApiError(400, "Passwords do not match", {
-            code: ErrorCodes.PASSWORDS_DO_NOT_MATCH
-        })
+        console.log('No match');
+        throw new ApiError(400, 'Passwords do not match', {
+            code: ErrorCodes.PASSWORDS_DO_NOT_MATCH,
+        });
     }
 
     if (!token) {
-        console.log("Token missing");
-        throw new ApiError(400, "Token is missing", {
+        console.log('Token missing');
+        throw new ApiError(400, 'Token is missing', {
             code: ErrorCodes.TOKEN_MISSING,
-        })
+        });
     }
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await db.user.findFirst({
         where: {
             forgotPasswordToken: hashedToken,
-            forgotPasswordTokenExpiry: { gt: new Date() }
-        }
+            forgotPasswordTokenExpiry: { gt: new Date() },
+        },
     });
 
     if (!user) {
-        console.log("Token invalid");
-        throw new ApiError(400, "Invalid or expired token", {
-            code: ErrorCodes.TOKEN_INVALID
-        })
+        console.log('Token invalid');
+        throw new ApiError(400, 'Invalid or expired token', {
+            code: ErrorCodes.TOKEN_INVALID,
+        });
     }
 
     if (user.forgotPasswordTokenExpiry < Date.now()) {
-        console.log("Token expired");
-        throw new ApiError(400, "Token has expired", {
-            code: ErrorCodes.TOKEN_EXPIRED
+        console.log('Token expired');
+        throw new ApiError(400, 'Token has expired', {
+            code: ErrorCodes.TOKEN_EXPIRED,
         });
     }
 
@@ -490,11 +543,15 @@ const resetPassword = asyncHandler(async (req, res) => {
         data: {
             password,
             forgotPasswordToken: null,
-            forgotPasswordTokenExpiry: null
-        }
+            forgotPasswordTokenExpiry: null,
+        },
     });
 
-    const response = new ApiResponse(201, sanitize(updatedUser), "Password changed successfully");
+    const response = new ApiResponse(
+        201,
+        sanitize(updatedUser),
+        'Password changed successfully'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -504,10 +561,14 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 
     const targetUserId = req.params.userId || req.user.id;
 
-    if (req.params.userId && req.user.role !== "admin") {
-        throw new ApiError(403, "Forbidden: Not authorized to update this user", {
-            code: ErrorCodes.UNAUTHORIZED_ACCESS
-        })
+    if (req.params.userId && req.user.role !== 'admin') {
+        throw new ApiError(
+            403,
+            'Forbidden: Not authorized to update this user',
+            {
+                code: ErrorCodes.UNAUTHORIZED_ACCESS,
+            }
+        );
     }
 
     const updates = {};
@@ -516,13 +577,17 @@ const updateUserDetails = asyncHandler(async (req, res) => {
         const existingUser = await db.user.findFirst({
             where: {
                 username,
-                id: { not: targetUserId }
-            }
-        })
+                id: { not: targetUserId },
+            },
+        });
         if (existingUser) {
-            throw new ApiError(400, "User with email or username already exists", {
-                code: ErrorCodes.USER_ALREADY_EXISTS
-            });
+            throw new ApiError(
+                400,
+                'User with email or username already exists',
+                {
+                    code: ErrorCodes.USER_ALREADY_EXISTS,
+                }
+            );
         }
         updates.username = username;
     }
@@ -532,8 +597,8 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     }
 
     if (Object.keys(updates).length === 0) {
-        throw new ApiError(400, "At least one field must be provided", {
-            code: ErrorCodes.MISSING_FIELDS
+        throw new ApiError(400, 'At least one field must be provided', {
+            code: ErrorCodes.MISSING_FIELDS,
         });
     }
 
@@ -548,11 +613,15 @@ const updateUserDetails = asyncHandler(async (req, res) => {
             avatarUrl: true,
             role: true,
             createdAt: true,
-            updatedAt: true
-        }
+            updatedAt: true,
+        },
     });
 
-    const response = new ApiResponse(200, sanitize(updatedUser), "Account details updated successfully");
+    const response = new ApiResponse(
+        200,
+        sanitize(updatedUser),
+        'Account details updated successfully'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -561,9 +630,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.file?.patch;
 
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar file is missing", {
-            code: ErrorCodes.AVATAR_FILE_PATH_NOT_FOUND
-        })
+        throw new ApiError(400, 'Avatar file is missing', {
+            code: ErrorCodes.AVATAR_FILE_PATH_NOT_FOUND,
+        });
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -571,41 +640,50 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     const user = await db.user.update({
         where: { id: req.user?.id },
         data: {
-            avatarUrl: avatar.url
-        }
+            avatarUrl: avatar.url,
+        },
     });
 
-    const response = new ApiResponse(200, sanitize(user), "Avatar image updated successfully");
+    const response = new ApiResponse(
+        200,
+        sanitize(user),
+        'Avatar image updated successfully'
+    );
 
     return res.status(response.statusCode).json(response);
 });
 
 const googleLogin = asyncHandler(async (req, res) => {
-    console.log("Google login initiated");
+    console.log('Google login initiated');
 
     const token = req.cookies.accessToken;
     if (token) {
-        throw new ApiError(409, "You're already logged in. Logout before logging in again", {
-            code: ErrorCodes.ALREADY_LOGGED_IN
-        });
+        throw new ApiError(
+            409,
+            "You're already logged in. Logout before logging in again",
+            {
+                code: ErrorCodes.ALREADY_LOGGED_IN,
+            }
+        );
     }
 
     const state = generateState();
     const nonce = generateNonce();
 
-    res.cookie("oauth_state", state, {
+    res.cookie('oauth_state', state, {
         httpOnly: true,
         maxAge: 600000,
-        sameSite: "lax",
+        sameSite: 'lax',
     });
 
-    res.cookie("oauth_nonce", nonce, {
+    res.cookie('oauth_nonce', nonce, {
         httpOnly: true,
         maxAge: 600000,
-        sameSite: "lax",
+        sameSite: 'lax',
     });
 
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    const googleAuthUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${process.env.GOOGLE_CLIENT_ID}` +
         `&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}` +
         `&response_type=code` +
@@ -624,17 +702,17 @@ const googleCallback = asyncHandler(async (req, res) => {
     const savedState = req.cookies.oauth_state;
     const savedNonce = req.cookies.oauth_nonce;
 
-    res.clearCookie("oauth_state");
-    res.clearCookie("oauth_nonce");
+    res.clearCookie('oauth_state');
+    res.clearCookie('oauth_nonce');
 
     if (!state || !savedState || state !== savedState) {
-        throw new ApiError(401, "Invalid state parameter", {
+        throw new ApiError(401, 'Invalid state parameter', {
             code: ErrorCodes.INVALID_OAUTH_STATE,
         });
     }
 
     const tokenResponse = await axios.post(
-        "https://oauth2.googleapis.com/token",
+        'https://oauth2.googleapis.com/token',
         null,
         {
             params: {
@@ -642,18 +720,17 @@ const googleCallback = asyncHandler(async (req, res) => {
                 client_secret: process.env.GOOGLE_CLIENT_SECRET,
                 redirect_uri: process.env.GOOGLE_REDIRECT_URI,
                 code,
-                grant_type: "authorization_code",
+                grant_type: 'authorization_code',
             },
         }
     );
 
     console.log(tokenResponse);
 
-
     const { id_token, access_token, refresh_token } = tokenResponse.data;
 
     if (!id_token) {
-        throw new ApiError(400, "Missing ID token from Google", {
+        throw new ApiError(400, 'Missing ID token from Google', {
             code: ErrorCodes.MISSING_ID_TOKEN,
         });
     }
@@ -661,21 +738,24 @@ const googleCallback = asyncHandler(async (req, res) => {
     const decodedToken = await verifyGoogleToken(id_token);
 
     if (!decodedToken) {
-        throw new ApiError(401, "Invalid ID token", {
+        throw new ApiError(401, 'Invalid ID token', {
             code: ErrorCodes.INVALID_ID_TOKEN,
         });
     }
 
     if (!decodedToken.nonce || decodedToken.nonce !== savedNonce) {
-        throw new ApiError(401, "Invalid nonce parameter", {
+        throw new ApiError(401, 'Invalid nonce parameter', {
             code: ErrorCodes.INVALID_NONCE,
         });
     }
 
-    const googleProfilePic = decodedToken.picture.replace(/=s\d+-c$/, '=s256-c');
+    const googleProfilePic = decodedToken.picture.replace(
+        /=s\d+-c$/,
+        '=s256-c'
+    );
 
     let user = await db.user.findUnique({
-        where: { email: decodedToken.email }
+        where: { email: decodedToken.email },
     });
 
     if (!user) {
@@ -688,12 +768,12 @@ const googleCallback = asyncHandler(async (req, res) => {
                 googleRefreshToken: refresh_token || null,
             },
             process.env.TEMP_TOKEN_SECRET,
-            { expiresIn: "5m" }
+            { expiresIn: '5m' }
         );
 
-        res.cookie("tempToken", tempToken, {
+        res.cookie('tempToken', tempToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === 'production',
             maxAge: 5 * 60 * 1000, // 5 min
         });
 
@@ -712,26 +792,30 @@ const googleCallback = asyncHandler(async (req, res) => {
         if (Object.keys(updates).length > 0) {
             updatedUser = await db.user.update({
                 where: { id: user.id },
-                data: updates
+                data: updates,
             });
         }
 
         const accessToken = generateAccessToken(updatedUser);
         const refreshToken = generateRefreshToken(updatedUser);
 
-        res.cookie("accessToken", accessToken, {
+        res.cookie('accessToken', accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === 'production',
             maxAge: 3600000, // 1 hour
         });
 
-        res.cookie("refreshToken", refreshToken, {
+        res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === 'production',
             maxAge: 86400000, // 24 hour
         });
 
-        const response = new ApiResponse(200, sanitize(updatedUser), "Google Login successful");
+        const response = new ApiResponse(
+            200,
+            sanitize(updatedUser),
+            'Google Login successful'
+        );
 
         return res.status(response.statusCode).json(response);
     }
@@ -741,15 +825,16 @@ const completeGoogleSignup = asyncHandler(async (req, res) => {
     const { username } = req.body;
     const { email, googleId, name, url, googleRefreshToken } = req.tempUser;
 
-    res.clearCookie("tempToken");
+    res.clearCookie('tempToken');
 
     const existingUser = await db.user.findUnique({
-        where: { username }
+        where: { username },
     });
 
-    if (existingUser) throw new ApiError(409, "Username already taken", {
-        code: ErrorCodes.USER_ALREADY_EXISTS
-    });
+    if (existingUser)
+        throw new ApiError(409, 'Username already taken', {
+            code: ErrorCodes.USER_ALREADY_EXISTS,
+        });
 
     const user = await db.user.create({
         data: {
@@ -758,35 +843,45 @@ const completeGoogleSignup = asyncHandler(async (req, res) => {
             googleId,
             avatarUrl: url,
             refreshToken: googleRefreshToken || null,
-        }
+        },
     });
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    res.cookie("accessToken", accessToken, { httpOnly: true, maxAge: 3600000 });
-    res.cookie("refreshToken", refreshToken, { httpOnly: true, maxAge: 86400000 });
+    res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 3600000 });
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        maxAge: 86400000,
+    });
 
-    const response = new ApiResponse(201, sanitize(user), "Google Signup completed");
+    const response = new ApiResponse(
+        201,
+        sanitize(user),
+        'Google Signup completed'
+    );
 
     return res.status(response.statusCode).json(response);
 });
 
-
 const githubLogin = asyncHandler(async (req, res) => {
-    console.log("Github Login triggered");
+    console.log('Github Login triggered');
     const token = req.cookies.accessToken;
     if (token) {
-        throw new ApiError(401, "Already logged in. Logout before logging in again", {
-            code: ErrorCodes.OAUTH_LOGIN_FAILED,
-        });
+        throw new ApiError(
+            401,
+            'Already logged in. Logout before logging in again',
+            {
+                code: ErrorCodes.OAUTH_LOGIN_FAILED,
+            }
+        );
     }
 
     const state = generateState();
-    res.cookie("oauth_state", state, {
+    res.cookie('oauth_state', state, {
         httpOnly: true,
         maxAge: 600000,
-        sameSite: "lax",
+        sameSite: 'lax',
     });
 
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${process.env.GITHUB_REDIRECT_URI}&scope=user:email&state=${state}`;
@@ -794,21 +889,20 @@ const githubLogin = asyncHandler(async (req, res) => {
     res.redirect(githubAuthUrl);
 });
 
-
 const githubCallback = asyncHandler(async (req, res) => {
     const { code, state } = req.query;
     const savedState = req.cookies.oauth_state;
-    res.clearCookie("oauth_state");
+    res.clearCookie('oauth_state');
 
     if (!state || !savedState || state !== savedState) {
-        throw new ApiError(401, "Invalid state parameter", {
+        throw new ApiError(401, 'Invalid state parameter', {
             code: ErrorCodes.INVALID_OAUTH_STATE,
         });
     }
 
     // Exchange code for access token
     const tokenResponse = await axios.post(
-        "https://github.com/login/oauth/access_token",
+        'https://github.com/login/oauth/access_token',
         {
             client_id: process.env.GITHUB_CLIENT_ID,
             client_secret: process.env.GITHUB_CLIENT_SECRET,
@@ -817,20 +911,20 @@ const githubCallback = asyncHandler(async (req, res) => {
         },
         {
             headers: {
-                Accept: "application/json",
+                Accept: 'application/json',
             },
         }
     );
 
     const githubAccessToken = tokenResponse.data.access_token;
     if (!githubAccessToken) {
-        throw new ApiError(401, "No access token received from GitHub", {
+        throw new ApiError(401, 'No access token received from GitHub', {
             code: ErrorCodes.OAUTH_NO_ACCESS_TOKEN,
         });
     }
 
     // Get user info from GitHub
-    const userInfo = await axios.get("https://api.github.com/user", {
+    const userInfo = await axios.get('https://api.github.com/user', {
         headers: {
             Authorization: `Bearer ${githubAccessToken}`,
         },
@@ -838,12 +932,13 @@ const githubCallback = asyncHandler(async (req, res) => {
 
     const { id, login, email, name, avatar_url } = userInfo.data;
 
-    const userProfilePic = avatar_url || `https://github.com/identicons/${login}.png`
+    const userProfilePic =
+        avatar_url || `https://github.com/identicons/${login}.png`;
 
     // GitHub sometimes doesn't return email, so you might need a second call:
     let userEmail = email;
     if (!userEmail) {
-        const emails = await axios.get("https://api.github.com/user/emails", {
+        const emails = await axios.get('https://api.github.com/user/emails', {
             headers: {
                 Authorization: `Bearer ${githubAccessToken}`,
             },
@@ -854,15 +949,15 @@ const githubCallback = asyncHandler(async (req, res) => {
 
     // Find or create user
     let user = await db.user.findUnique({
-        where: { email: userEmail }
+        where: { email: userEmail },
     });
     if (!user) {
         let githubUsername = login;
 
         const existingUser = await db.user.findUnique({
             where: {
-                username: login
-            }
+                username: login,
+            },
         });
 
         if (existingUser) {
@@ -876,8 +971,8 @@ const githubCallback = asyncHandler(async (req, res) => {
                 username: githubUsername,
                 email: userEmail,
                 fullname: name || login,
-                avatarUrl: userProfilePic
-            }
+                avatarUrl: userProfilePic,
+            },
         });
     } else {
         if (!user.githubId) {
@@ -887,10 +982,12 @@ const githubCallback = asyncHandler(async (req, res) => {
         if (!user.username) {
             const existingUser = await db.user.findUnique({
                 where: {
-                    username: login
-                }
-            })
-            user.username = existingUser ? `${login}-${crypto.randomUUID().slice(0, 5)}` : login;
+                    username: login,
+                },
+            });
+            user.username = existingUser
+                ? `${login}-${crypto.randomUUID().slice(0, 5)}`
+                : login;
         }
     }
 
@@ -898,21 +995,42 @@ const githubCallback = asyncHandler(async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    res.cookie("accessToken", accessToken, {
+    res.cookie('accessToken', accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 3600000,
     });
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 3600000,
     });
 
-    const response = new ApiResponse(201, sanitize(user), "GitHub Login successful");
+    const response = new ApiResponse(
+        201,
+        sanitize(user),
+        'GitHub Login successful'
+    );
 
     return res.status(response.statusCode).json(response);
 });
 
-export { registerUser, verifyEmail, resendVerificationEmail, loginUser, getUser, logoutUser, refreshAccessToken, resetPasswordRequest, resetPassword, updateUserDetails, updateUserAvatar, googleLogin, googleCallback, completeGoogleSignup, githubLogin, githubCallback }
+export {
+    registerUser,
+    verifyEmail,
+    resendVerificationEmail,
+    loginUser,
+    getUser,
+    logoutUser,
+    refreshAccessToken,
+    resetPasswordRequest,
+    resetPassword,
+    updateUserDetails,
+    updateUserAvatar,
+    googleLogin,
+    googleCallback,
+    completeGoogleSignup,
+    githubLogin,
+    githubCallback,
+};
