@@ -21,14 +21,12 @@ async function main() {
     return;
   }
 
-  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
-
   const admin = await db.user.create({
     data: {
       fullname: 'CodeFlow-Ka-Malik' ,
       username: ADMIN_USERNAME,
       email: ADMIN_EMAIL,
-      password: hashedPassword,
+      password: ADMIN_PASSWORD,
       role: 'ADMIN',
       isEmailVerified: true,
     },
