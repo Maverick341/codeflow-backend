@@ -7,11 +7,11 @@ import {
     sendMail,
     emailVerificationMailGenContent,
     resetPasswordMailGenContent,
-} from '../utils/mail.js';
+} from '../libs/mail.js';
 import { ApiError } from '../utils/api-error.js';
 import { ErrorCodes } from '../utils/constants.js';
 import { ApiResponse } from '../utils/api-response.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { uploadOnCloudinary } from '../libs/cloudinary.js';
 import { db } from '../libs/db.js';
 import { Role } from '../generated/prisma/index.js';
 import {
