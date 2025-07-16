@@ -70,4 +70,6 @@ export const ErrorCodes = {
 
     // Logout
     LOGOUT_FAILED: 'LOGOUT_FAILED',
+
+    PROBLEM_UNSUPPORTED_LANGUAGE: 'UNSUPPORTED_LANGUAGE',
 };
