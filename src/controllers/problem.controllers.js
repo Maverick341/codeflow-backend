@@ -1,8 +1,13 @@
 import { db } from '../libs/db.js';
-import { getJudge0LanguageId, submitBatch } from '../libs/judge0.js';
+import {
+    getJudge0LanguageId,
+    pollBatchResults,
+    submitBatch,
+} from '../libs/judge0.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import { ErrorCodes } from '../utils/constants.js';
 import { ApiResponse } from '../utils/api-response.js';
+import { ApiError } from '../utils/api-error.js';
 
 const createProblem = asyncHandler(async (req, res) => {
     const {
@@ -23,6 +28,12 @@ const createProblem = asyncHandler(async (req, res) => {
         });
     }
 
+    if (!Array.isArray(testcases) || testcases.length === 0) {
+        throw new ApiError(400, 'Testcases are missing or empty', {
+            code: ErrorCodes.PROBLEM_INVALID_TESTCASES,
+        });
+    }
+
     for (const [language, solutionCode] of Object.entries(referenceSolutions)) {
         const languageId = getJudge0LanguageId(language);
 
@@ -39,7 +50,32 @@ const createProblem = asyncHandler(async (req, res) => {
             expected_output: output,
         }));
 
+        if (!submissions.length) {
+            throw new ApiError(
+                400,
+                `No valid testcases found for ${language}`,
+                {
+                    code: ErrorCodes.PROBLEM_SUBMISSION_ERROR,
+                }
+            );
+        }
+
+        console.log(`Language: ${language}, languageId: ${languageId}`);
+        console.log('Submissions:', submissions);
+
         const submissionResults = await submitBatch(submissions);
+
+        console.log(submissionResults);
+
+        if (!submissionResults || !Array.isArray(submissionResults)) {
+            throw new ApiError(
+                500,
+                `Failed to submit testcases for ${language}`,
+                {
+                    code: ErrorCodes.JUDGE0_SUBMISSION_FAILED,
+                }
+            );
+        }
 
         const token = submissionResults.map((res) => res.token);
 
@@ -47,6 +83,10 @@ const createProblem = asyncHandler(async (req, res) => {
 
         for (let i = 0; i < results.length; i++) {
             const result = results[i];
+            console.log('Result-----', result);
+            console.log(
+                `Testcase ${i + 1} and Language ${language} ----- result ${JSON.stringify(result.status.description)}`
+            );
 
             if (result.status.id !== 3) {
                 throw new ApiError(

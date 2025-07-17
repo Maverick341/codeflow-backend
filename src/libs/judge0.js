@@ -9,18 +9,17 @@ export const getJudge0LanguageId = (language) => {
         PYTHON: 71,
         JAVA: 62,
         JAVASCRIPT: 63,
-        PYTHON: 71,
-        'C++': 54,
+        // 'C++': 54,
     };
 
     return languageMap[language.toUpperCase()];
 };
 
-export const submitBatch = async (submissons) => {
-    const { data } = axios.post(
+export const submitBatch = async (submissions) => {
+    const { data } = await axios.post(
         `${process.env.JUDGE0_API_URL}/submissions/batch?base64_encoded=false`,
         {
-            submissons,
+            submissions,
         }
     );
 
@@ -34,15 +33,21 @@ export const pollBatchResults = async (tokens) => {
         const { data } = await axios.get(
             `${process.env.JUDGE0_API_URL}/submissions/batch`,
             {
-                params: tokens.join(','),
-                base64_encoded: false,
+                params: {
+                    tokens: tokens.join(','),
+                    base64_encoded: false,
+                },
             }
         );
 
-        const results = data.submissons;
+        if (!data?.submissions || !Array.isArray(data.submissions)) {
+            throw new Error("Judge0 batch response is missing 'submissions'");
+        }
+
+        const results = data.submissions;
 
         const isAllDone = results.every(
-            (result) => result.status.id !== 1 && result.status.id !== 2
+            (r) => r.status.id !== 1 && r.status.id !== 2
         );
 
         if (isAllDone) return results;
