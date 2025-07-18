@@ -129,7 +129,11 @@ const getAllProblems = asyncHandler(async (req, res) => {
         });
     }
 
-    const response = new ApiResponse(200, problems, 'Problems fetched successfully');
+    const response = new ApiResponse(
+        200,
+        problems,
+        'Problems fetched successfully'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -138,7 +142,7 @@ const getProblemById = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const problem = await db.problem.findUnique({
-        where: { id }
+        where: { id },
     });
 
     if (!problem) {
@@ -147,7 +151,11 @@ const getProblemById = asyncHandler(async (req, res) => {
         });
     }
 
-    const response = new ApiResponse(200, problem, 'Problem fetched successfully');
+    const response = new ApiResponse(
+        200,
+        problem,
+        'Problem fetched successfully'
+    );
 
     return res.status(response.statusCode).json(response);
 });
@@ -265,7 +273,27 @@ const updateProblem = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
 });
 
-const deleteProblem = asyncHandler(async (req, res) => {});
+const deleteProblem = asyncHandler(async (req, res) => {
+    const {id} = req.params;
+
+    const problem = await db.problem.findUnique({ where: { id } });
+
+    if (!problem) {
+        throw new ApiError(404, 'Problems not found', {
+            code: ErrorCodes.PROBLEM_NOT_FOUND,
+        });
+    }
+
+    await db.problem.delete({where: {id}});
+
+    const response = new ApiResponse(
+        201,
+        null,
+        'Problem Deleted Successfully'
+    );
+
+    res.status(response.statusCode).json(response);
+});
 
 const getAllProblemsSolvedByUser = asyncHandler(async (req, res) => {});
 
