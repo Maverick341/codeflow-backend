@@ -1,3 +1,5 @@
+import { body } from 'express-validator';
+
 const testCasesValidator = () => {
     return [
         body('testcases')
