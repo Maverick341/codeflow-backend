@@ -21,10 +21,12 @@ app.use(cookieParser());
 import healthCheckRouter from './routes/healthcheck.routes.js';
 import authRouter from './routes/auth.routes.js';
 import problemRouter from './routes/problem.routes.js';
+import executionRoute from './routes/executeCode.routes.js'
 
 app.use('/api/v1/healthCheck', healthCheckRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/problems', problemRouter);
+app.use('/api/v1/executeCode', executionRoute)
 
 app.use(errorHandler);
 
