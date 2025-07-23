@@ -28,12 +28,6 @@ const createProblem = asyncHandler(async (req, res) => {
         });
     }
 
-    if (!Array.isArray(testcases) || testcases.length === 0) {
-        throw new ApiError(400, 'Testcases are missing or empty', {
-            code: ErrorCodes.PROBLEM_INVALID_TESTCASES,
-        });
-    }
-
     for (const [language, solutionCode] of Object.entries(referenceSolutions)) {
         const languageId = getJudge0LanguageId(language);
 
@@ -178,12 +172,6 @@ const updateProblem = asyncHandler(async (req, res) => {
     if (!req.user || req.user.role !== 'ADMIN') {
         throw new ApiError(403, 'Admin access only', {
             code: ErrorCodes.UNAUTHORIZED_ACCESS,
-        });
-    }
-
-    if (!Array.isArray(testcases) || testcases.length === 0) {
-        throw new ApiError(400, 'Testcases are missing or empty', {
-            code: ErrorCodes.PROBLEM_INVALID_TESTCASES,
         });
     }
 
