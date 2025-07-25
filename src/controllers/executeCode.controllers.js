@@ -7,6 +7,7 @@ import {
 import { asyncHandler } from '../utils/async-handler.js';
 import { Status } from '../generated/prisma/index.js';
 import { ApiResponse } from '../utils/api-response.js';
+import { ApiError } from '../utils/api-error.js';
 
 const submitCode = asyncHandler(async (req, res) => {
     const { source_code, language_id, stdin, expected_outputs, problemId } =
