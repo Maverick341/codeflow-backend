@@ -262,7 +262,7 @@ const updateProblem = asyncHandler(async (req, res) => {
 });
 
 const deleteProblem = asyncHandler(async (req, res) => {
-    const {id} = req.params;
+    const { id } = req.params;
 
     const problem = await db.problem.findUnique({ where: { id } });
 
@@ -272,18 +272,35 @@ const deleteProblem = asyncHandler(async (req, res) => {
         });
     }
 
-    await db.problem.delete({where: {id}});
+    await db.problem.delete({ where: { id } });
 
-    const response = new ApiResponse(
-        201,
-        null,
-        'Problem Deleted Successfully'
-    );
+    const response = new ApiResponse(201, null, 'Problem Deleted Successfully');
 
     res.status(response.statusCode).json(response);
 });
 
-const getAllProblemsSolvedByUser = asyncHandler(async (req, res) => {});
+const getAllProblemsSolvedByUser = asyncHandler(async (req, res) => {
+    const problems = await db.problem.findMany({
+        where: {
+            solvedBy: {
+                some: {
+                    userId: req.user.id,
+                },
+            },
+        },
+        include: {
+            solvedBy: {
+                where: {
+                    userId: req.user.id,
+                },
+            },
+        },
+    });
+
+    const response = new ApiResponse(200, problems, 'Problem fetched Successfully');
+
+    return res.status(response.statusCode).json(response);
+});
 
 export {
     createProblem,

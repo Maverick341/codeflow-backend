@@ -9,6 +9,4 @@ router.route('/getSubmission/:problemId').get(isLoggedIn, getSubmissionsForProbl
 router.route('/getSubmissionsCount/:problemId').get(isLoggedIn, getAllSubmissionsForProblem);
 
 
-router.route('/').post();
-
 export default router;
