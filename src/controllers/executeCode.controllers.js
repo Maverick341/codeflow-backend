@@ -8,11 +8,22 @@ import { asyncHandler } from '../utils/async-handler.js';
 import { Status } from '../generated/prisma/index.js';
 import { ApiResponse } from '../utils/api-response.js';
 
-const executeCode = asyncHandler(async (req, res) => {
+const submitCode = asyncHandler(async (req, res) => {
     const { source_code, language_id, stdin, expected_outputs, problemId } =
         req.body;
 
     const userId = req.user.id;
+
+    // Validate that the problem exists
+    const problem = await db.problem.findUnique({
+        where: { id: problemId },
+    });
+
+    if (!problem) {
+        throw new ApiError(404, `Problem with ID ${problemId} not found`, {
+            code: ErrorCodes.PROBLEM_NOT_FOUND,
+        });
+    }
 
     // 1. Prepare each test cases for judge0 batch submission
     const submissions = stdin.map((input) => ({
@@ -135,4 +146,76 @@ const executeCode = asyncHandler(async (req, res) => {
     return res.status(response.statusCode).json(response);
 });
 
-export { executeCode };
+const runCode = asyncHandler(async (req, res) => {
+    const { source_code, language_id, stdin, expected_outputs, problemId } =
+        req.body;
+
+    // Validate that the problem exists
+    const problem = await db.problem.findUnique({
+        where: { id: problemId },
+    });
+
+    if (!problem) {
+        throw new ApiError(404, `Problem with ID ${problemId} not found`, {
+            code: ErrorCodes.PROBLEM_NOT_FOUND,
+        });
+    }
+
+    // 1. Prepare each test cases for judge0 batch submission
+    const submissions = stdin.map((input) => ({
+        source_code,
+        language_id,
+        stdin: input,
+    }));
+
+    // 2. Send batch of submissions to judge0
+    const submitResponse = await submitBatch(submissions);
+
+    const tokens = submitResponse.map((res) => res.token);
+
+    // 3. Poll judge0 for results of all submitted test cases
+    const results = await pollBatchResults(tokens);
+
+    console.log('Run Code Result-------');
+    console.log(results);
+
+    // 4. Analyze test case results
+    let allPassed = true;
+
+    const detailedResults = results.map((result, i) => {
+        const stdout = result.stdout?.trim();
+        const expected_output = expected_outputs[i]?.trim();
+
+        const passed = stdout === expected_output;
+
+        if (!passed) allPassed = false;
+
+        return {
+            testCase: i + 1,
+            passed,
+            stdout,
+            expected: expected_output,
+            stderr: result.stderr || null,
+            compile_output: result.compile_output,
+            status: result.status.description,
+            memory: result.memory ? `${result.memory} KB` : undefined,
+            time: result.time ? `${result.time} s` : undefined,
+        };
+    });
+
+    // Return results directly without any database storage
+    const response = new ApiResponse(
+        200,
+        {
+            allPassed,
+            testResults: detailedResults,
+            totalTestCases: detailedResults.length,
+            passedTestCases: detailedResults.filter((r) => r.passed).length,
+        },
+        'Code executed successfully!'
+    );
+
+    return res.status(response.statusCode).json(response);
+});
+
+export { submitCode, runCode };
