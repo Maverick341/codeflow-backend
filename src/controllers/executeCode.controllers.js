@@ -5,6 +5,8 @@ import {
     submitBatch,
 } from '../libs/judge0.js';
 import { asyncHandler } from '../utils/async-handler.js';
+import { Status } from '../generated/prisma/index.js';
+import { ApiResponse } from '../utils/api-response.js';
 
 const executeCode = asyncHandler(async (req, res) => {
     const { source_code, language_id, stdin, expected_outputs, problemId } =
@@ -52,15 +54,7 @@ const executeCode = asyncHandler(async (req, res) => {
             memory: result.memory ? `${result.memory} KB` : undefined,
             time: result.time ? `${result.time} s` : undefined,
         };
-
-        // console.log(`Testcase #${i+1}`);
-        // console.log(`Input for testcase #${i+1}: ${stdin[i]}`)
-        // console.log(`Expected Output for testcase #${i+1}: ${expected_output}`)
-        // console.log(`Actual output for testcase #${i+1}: ${stdout}`)
-        // console.log(`Matched testcase #${i+1}: ${passed}`)
     });
-
-    // console.log(detailedResults);
 
     // 5. store submission summary
     const submission = await db.submission.create({
