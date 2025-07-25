@@ -6,14 +6,25 @@ const sleep = (ms) => {
 
 export const getJudge0LanguageId = (language) => {
     const languageMap = {
-        PYTHON: 71,
-        JAVA: 62,
-        JAVASCRIPT: 63,
+        'PYTHON': 71,
+        'JAVA': 62,
+        'JAVASCRIPT': 63,
         // 'C++': 54,
     };
 
     return languageMap[language.toUpperCase()];
 };
+
+export const getLanguageName = (languageId) => {
+    const language_names = {
+        71: 'Python',
+        62: 'Java',
+        63: 'Javascript',
+        // 54: 'C++',
+    }
+
+    return language_names[languageId] || 'Unknown'
+}
 
 export const submitBatch = async (submissions) => {
     const { data } = await axios.post(
