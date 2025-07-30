@@ -50,22 +50,22 @@ const registerUser = asyncHandler(async (req, res) => {
         });
     }
 
-    const avatarLocalPath = req.file?.path;
+    // const avatarLocalPath = req.file?.path;
 
-    console.log(avatarLocalPath);
+    // console.log(avatarLocalPath);
 
-    if (!avatarLocalPath) {
-        throw new ApiError(400, 'Avatar file is required', {
-            code: ErrorCodes.AVATAR_NOT_PROVIDED,
-        });
-    }
+    // if (!avatarLocalPath) {
+    //     throw new ApiError(400, 'Avatar file is required', {
+    //         code: ErrorCodes.AVATAR_NOT_PROVIDED,
+    //     });
+    // }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    // const avatar = await uploadOnCloudinary(avatarLocalPath);
 
     const user = await db.user.create({
         data: {
             fullname,
-            avatarUrl: avatar.url,
+            // avatarUrl: avatar.url,
             email,
             username,
             password,

@@ -46,7 +46,7 @@ const router = Router();
 router
     .route('/register')
     .post(
-        catchMulterError(upload.single('avatar'), false),
+        // catchMulterError(upload.single('avatar'), false),
         userRegistrationValidator(),
         validate,
         registerUser
