@@ -324,8 +324,11 @@ const getUser = asyncHandler(async (req, res) => {
             id: true,
             email: true,
             username: true,
+            fullname: true, 
+            avatarUrl: true,
             isEmailVerified: true,
             role: true,
+            createdAt: true,
         },
     });
 
@@ -335,7 +338,7 @@ const getUser = asyncHandler(async (req, res) => {
         });
     }
 
-    const response = new ApiResponse(200, sanitize(user), 'Current User Shown');
+    const response = new ApiResponse(200, user, 'Current User Shown');
 
     return res.status(response.statusCode).json(response);
 });
