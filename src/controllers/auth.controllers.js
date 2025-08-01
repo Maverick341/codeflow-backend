@@ -90,7 +90,7 @@ const registerUser = asyncHandler(async (req, res) => {
         },
     });
 
-    const verificationUrl = `${process.env.CLIENT_URL}verify-email/${unHashedToken}`;
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${unHashedToken}`;
 
     await sendMail({
         email: user.email,
@@ -224,7 +224,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
         },
     });
 
-    const verificationUrl = `${process.env.CLIENT_URL}verify-email/${unHashedToken}`;
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${unHashedToken}`;
 
     await sendMail({
         email: user.email,

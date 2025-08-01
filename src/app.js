@@ -8,8 +8,8 @@ const app = express();
 app.use(
     cors({
         // origin: '*', 
-        origin: process.env.CLIENT_URL,
-        credentials: false,
+        origin: ['http://localhost:5173', 'http://localhost:3000'],
+        credentials: true,
         methods: ['GET', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
     })
