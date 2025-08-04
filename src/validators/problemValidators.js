@@ -43,28 +43,30 @@ const problemValidator = () => [
         .withMessage('At least one test case is required')
         .custom((testcases) => {
             if (!testcases.every(tc => 
-                tc.input && typeof tc.input === 'string' && tc.input.trim().length > 0 &&
-                tc.output && typeof tc.output === 'string' && tc.output.trim().length > 0
+                tc.input !== undefined && tc.input !== null && typeof tc.input === 'string' &&
+                tc.output !== undefined && tc.output !== null && typeof tc.output === 'string' && tc.output.trim().length > 0
             )) {
-                throw new Error('Each test case must have non-empty input and output');
+                throw new Error('Each test case must have valid input and non-empty output');
             }
             return true;
         }),
     
-    // Examples validation (all languages optional)
+    // Examples validation (object is required, but individual languages are optional)
     body('examples')
-        .optional()
         .isObject()
         .withMessage('Examples must be an object'),
     
+    // Only validate if the specific language exists in examples
     body('examples.JAVASCRIPT.input')
         .optional()
+        .if(body('examples.JAVASCRIPT').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('JavaScript example input cannot be empty'),
     
     body('examples.JAVASCRIPT.output')
         .optional()
+        .if(body('examples.JAVASCRIPT').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('JavaScript example output cannot be empty'),
@@ -75,12 +77,14 @@ const problemValidator = () => [
     
     body('examples.PYTHON.input')
         .optional()
+        .if(body('examples.PYTHON').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('Python example input cannot be empty'),
     
     body('examples.PYTHON.output')
         .optional()
+        .if(body('examples.PYTHON').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('Python example output cannot be empty'),
@@ -91,12 +95,14 @@ const problemValidator = () => [
     
     body('examples.JAVA.input')
         .optional()
+        .if(body('examples.JAVA').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('Java example input cannot be empty'),
     
     body('examples.JAVA.output')
         .optional()
+        .if(body('examples.JAVA').exists())
         .trim()
         .isLength({ min: 1 })
         .withMessage('Java example output cannot be empty'),
