@@ -23,7 +23,7 @@ async function main() {
 
   const admin = await db.user.create({
     data: {
-      fullname: 'CodeFlow-Ka-Malik' ,
+      fullname: 'superadmin' ,
       username: ADMIN_USERNAME,
       email: ADMIN_EMAIL,
       password: ADMIN_PASSWORD,
