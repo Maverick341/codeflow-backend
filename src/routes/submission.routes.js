@@ -5,7 +5,7 @@ import { getAllSubmissions, getAllSubmissionsForProblem, getSubmissionsForProble
 const router = Router();
 
 router.route('/getAllSubmissions').get(isLoggedIn, getAllSubmissions);
-router.route('/getSubmission/:problemId').get(isLoggedIn, getSubmissionsForProblem);
+router.route('/getSubmissions/:problemId').get(isLoggedIn, getSubmissionsForProblem);
 router.route('/getSubmissionsCount/:problemId').get(isLoggedIn, getAllSubmissionsForProblem);
 
 
