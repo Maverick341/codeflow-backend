@@ -86,7 +86,7 @@ const addProblemToPlaylist = asyncHandler(async (req, res) => {
 
     const { problemIds } = req.body;
 
-    const problemsInPlaylist = await db.problemsInPlaylist.createMany({
+    const problemsInPlaylist = await db.problemInPlaylist.createMany({
         data: problemIds.map((problemId) => ({
             playlistId,
             problemId
