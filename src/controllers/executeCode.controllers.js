@@ -142,7 +142,7 @@ const submitCode = asyncHandler(async (req, res) => {
     const response = new ApiResponse(
         200,
         submissionWithTestCase,
-        'Code Executed! Successfully!'
+        'Code Submitted Successfully!'
     );
 
     return res.status(response.statusCode).json(response);
@@ -193,6 +193,7 @@ const runCode = asyncHandler(async (req, res) => {
         if (!passed) allPassed = false;
 
         return {
+            id: `run-${problemId}-${i + 1}-${Date.now()}`, // Unique ID for frontend key
             testCase: i + 1,
             passed,
             stdout,
@@ -210,11 +211,12 @@ const runCode = asyncHandler(async (req, res) => {
         200,
         {
             allPassed,
+            status: allPassed ? Status.ACCEPTED : Status.WRONG_ANSWER,
             testResults: detailedResults,
             totalTestCases: detailedResults.length,
             passedTestCases: detailedResults.filter((r) => r.passed).length,
         },
-        'Code executed successfully!'
+        'Code Executed Successfully!'
     );
 
     return res.status(response.statusCode).json(response);
