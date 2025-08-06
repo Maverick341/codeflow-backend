@@ -221,3 +221,73 @@ const runCode = asyncHandler(async (req, res) => {
 });
 
 export { submitCode, runCode };
+
+/* 
+🚀 TODO: MAJOR ARCHITECTURAL IMPROVEMENTS NEEDED
+================================================================
+
+📋 ISSUE: Security & Scalability Problems
+-----------------------------------------
+Current: Frontend sends test cases in request body (stdin, expected_outputs)
+Problem: 
+- Security risk: Users can tamper with test cases
+- Large payload: 100+ test cases = huge requests  
+- Data integrity: Frontend state might be stale
+- Cheating: Users can modify expected outputs in DevTools
+
+🎯 SOLUTION: Backend-Driven Test Case Management
+-----------------------------------------------
+CHANGE FROM:
+  Frontend: { source_code, language_id, stdin[], expected_outputs[], problemId }
+CHANGE TO:
+  Frontend: { source_code, language_id, problemId }
+  Backend: Fetch test cases from database using problemId
+
+📁 FILES TO MODIFY:
+------------------
+1. Backend: src/controllers/executeCode.controllers.js (THIS FILE)
+   - Remove stdin, expected_outputs from req.body
+   - Add database queries to fetch test cases
+   - Implement smart test case selection for runCode
+
+2. Frontend: Components that call these APIs
+   - Remove testcase splitting logic
+   - Send only problemId instead of test data
+
+3. Optional: src/utils/constants.js
+   - Add new error codes: NO_TESTCASES_AVAILABLE, NO_EXAMPLES_AVAILABLE
+
+🔧 IMPLEMENTATION STEPS:
+-----------------------
+1. UPDATE runCode() function:
+   - Remove: const { stdin, expected_outputs } = req.body
+   - Add: const problem = await db.problem.findUnique({...})
+   - Add: const testcases = problem.testcases
+   - Add: const stdin = testcases.map(tc => tc.input)
+   - Add: const expected_outputs = testcases.map(tc => tc.output)
+
+2. UPDATE submitCode() function:
+   - Same changes as runCode but already implemented ✅
+
+3. ADD FUTURE SCALING LOGIC:
+   - Environment check: development vs production
+   - Development: Use all test cases  
+   - Production: Use random subset for runCode
+   - Always use all test cases for submitCode
+
+4. OPTIMIZE DATABASE QUERIES:
+   - Add select: { testcases: { select: { input: true, output: true } } }
+   - Consider Redis caching for frequently accessed problems
+
+📊 BENEFITS AFTER IMPLEMENTATION:
+--------------------------------
+✅ Security: No test case tampering
+✅ Performance: Smaller request payloads  
+✅ Scalability: Handles 100+ test cases efficiently
+✅ Flexibility: Can implement smart test case selection
+✅ Caching: Can cache test cases at backend level
+✅ A/B Testing: Can test different strategies
+
+⏰ PRIORITY: HIGH (Implement after frontend completion)
+================================================================
+*/
