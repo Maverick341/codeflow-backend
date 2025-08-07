@@ -1,6 +1,6 @@
-<h1 align="center" id="title">Code Flow Backend</h1>
+<h1 align="center" id="title">CodeFlow Backend</h1>
 
-<p id="description">Backend for Code Flow, a LeetCode-style coding platform. Built with Node.js Express PostgreSQL and Prisma ORM. Supports user auth (JWT) personalized problem playlists/sheets problem management and real-time code execution via the Judge0 API.</p>
+<p id="description">Backend for **CodeFlow**, a LeetCode-style coding platform. Built with Node.js Express PostgreSQL and Prisma ORM. Supports user auth (JWT) personalized problem playlists/sheets problem management and real-time code execution via the Judge0 API.</p>
 
 <p align="center"><img src="https://socialify.git.ci/Maverick341/leetlab-backend/image?custom_language=Express&amp;font=Bitter&amp;language=1&amp;name=1&amp;owner=1&amp;theme=Light" alt="project-image"></p>
 
