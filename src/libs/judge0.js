@@ -1,14 +1,22 @@
 import axios from 'axios';
 
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST;
+
+const rapidApiHeaders = {
+    'X-RapidAPI-Key': RAPIDAPI_KEY,
+    'X-RapidAPI-Host': RAPIDAPI_HOST,
+};
+
 const sleep = (ms) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 export const getJudge0LanguageId = (language) => {
     const languageMap = {
-        'PYTHON': 71,
-        'JAVA': 62,
-        'JAVASCRIPT': 63,
+        PYTHON: 71,
+        JAVA: 62,
+        JAVASCRIPT: 63,
         // 'C++': 54,
     };
 
@@ -21,17 +29,18 @@ export const getLanguageName = (languageId) => {
         62: 'Java',
         63: 'Javascript',
         // 54: 'C++',
-    }
+    };
 
-    return language_names[languageId] || 'Unknown'
-}
+    return language_names[languageId] || 'Unknown';
+};
 
 export const submitBatch = async (submissions) => {
     const { data } = await axios.post(
         `${process.env.JUDGE0_API_URL}/submissions/batch?base64_encoded=false`,
         {
             submissions,
-        }
+        },
+        { headers: rapidApiHeaders }
     );
 
     console.log('Submission Results: ', data);
@@ -48,6 +57,7 @@ export const pollBatchResults = async (tokens) => {
                     tokens: tokens.join(','),
                     base64_encoded: false,
                 },
+                headers: rapidApiHeaders,
             }
         );
 
