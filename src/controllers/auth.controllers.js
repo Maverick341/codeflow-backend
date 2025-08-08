@@ -295,15 +295,16 @@ const loginUser = asyncHandler(async (req, res) => {
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: true,
+        sameSite: 'None',
         maxAge: 3600000,
     });
 
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: true,
+        sameSite: 'None',
         maxAge: 86400000,
     });
-
     const response = new ApiResponse(201, sanitize(user), 'Login successful');
 
     return res.status(response.statusCode).json(response);
@@ -324,7 +325,7 @@ const getUser = asyncHandler(async (req, res) => {
             id: true,
             email: true,
             username: true,
-            fullname: true, 
+            fullname: true,
             avatarUrl: true,
             isEmailVerified: true,
             role: true,
