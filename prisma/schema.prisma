@@ -32,7 +32,7 @@ enum Status {
 
 model User {
   id                           String    @id @default(uuid())
-  avatarUrl                    String    @default("https://avatar.iran.liara.run/public/boy")
+  avatarUrl                    String    @default("https://placehold.co/600x400")
   avatarLocalpath              String    @default("")
   googleId                     String?   @unique
   githubId                     String?   @unique
