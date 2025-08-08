@@ -8,7 +8,7 @@ const app = express();
 app.use(
     cors({
         // origin: '*', 
-        origin: ['http://localhost:5173', 'http://localhost:3000'],
+        origin: ['https://codeflow-frontend.onrender.com', 'http://localhost:5173', 'http://localhost:3000'],
         credentials: true,
         methods: ['GET', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
