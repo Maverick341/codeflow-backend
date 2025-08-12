@@ -1,14 +1,22 @@
+
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import errorHandler from './middlewares/errorHandler.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 
+
+const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(
     cors({
-        // origin: '*', 
-        origin: ['https://codeflow-frontend.onrender.com', 'http://localhost:5173', 'http://localhost:3000'],
+        origin: allowedOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
