@@ -373,13 +373,16 @@ const logoutUser = asyncHandler(async (req, res) => {
         },
     });
 
-    res.cookie('accessToken', '', {
+    const cookieOptions = {
         httpOnly: true,
-    });
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(0),
+        path: '/',
+    };
 
-    res.cookie('refreshToken', '', {
-        httpOnly: true,
-    });
+    res.cookie('accessToken', '', cookieOptions);
+    res.cookie('refreshToken', '', cookieOptions);
 
     const response = new ApiResponse(201, undefined, 'Logged out successfully');
 
