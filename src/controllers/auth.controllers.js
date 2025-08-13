@@ -626,7 +626,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 
     const response = new ApiResponse(
         200,
-        sanitize(updatedUser),
+        updatedUser,
         'Account details updated successfully'
     );
 
